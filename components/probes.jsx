@@ -1,12 +1,12 @@
 "use client";
 
 import { colors } from "@/lib/tokens";
-import { StatusDot, AiBadge, ConfBadge, Stepper, Button, ApproveRejectBtns } from "./ui";
+import { StatusDot, AiBadge, ConfBadge, Checkbox, Stepper, Button, ApproveRejectBtns } from "./ui";
 
 // ═══════════════════════════════════════
 // Probe Row — Approved / Pending / Rejected states
 // ═══════════════════════════════════════
-export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle }) {
+export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle, selected, onSelect }) {
   const isPend = t.review === "pending";
   const isApp = t.review === "approved";
   const isRej = t.review === "rejected";
@@ -28,6 +28,9 @@ export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdat
         onClick={onToggle}
         className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer rounded-md transition-colors hover:bg-slate-50"
       >
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={!!selected} onToggle={onSelect} />
+        </div>
         <StatusDot color={dotColor} hollow={isRej} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
@@ -46,6 +49,9 @@ export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdat
         <ConfBadge value={t.aiConf} />
 
         {isPend && <ApproveRejectBtns onApprove={onApprove} onReject={onReject} />}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.purple} strokeWidth="2.5" className="shrink-0">
+          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+        </svg>
         {!isPend && (
           <button
             onClick={(e) => { e.stopPropagation(); onReset(); }}
