@@ -1,12 +1,12 @@
 "use client";
 
 import { colors } from "@/lib/tokens";
-import { StatusDot, AiBadge, ConfBadge, Checkbox, Stepper, Button, ApproveRejectBtns } from "./ui";
+import { StatusDot, AiBadge, ConfBadge, Checkbox, Stepper, Button } from "./ui";
 
 // ═══════════════════════════════════════
 // Probe Row — Approved / Pending / Rejected states
 // ═══════════════════════════════════════
-export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle, selected, onSelect, showCheckbox }) {
+export function ProbeRow({ t, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle, selected, onSelect, showCheckbox }) {
   const isPend = t.review === "pending";
   const isApp = t.review === "approved";
   const isRej = t.review === "rejected";
@@ -50,7 +50,6 @@ export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdat
         </div>
         <ConfBadge value={t.aiConf} />
 
-        {isPend && <ApproveRejectBtns onApprove={onApprove} onReject={onReject} />}
         <button
           onClick={(e) => { e.stopPropagation(); if (onSelect) onSelect(); }}
           title="Generate description"
@@ -108,13 +107,6 @@ export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdat
             <ConfBadge value={t.aiConf} />
           </div>
 
-          {/* Action buttons */}
-          {isPend && (
-            <div className="flex gap-1.5">
-              <Button onClick={onApprove}>Approve</Button>
-              <Button onClick={onReject} variant="secondary">Reject</Button>
-            </div>
-          )}
         </div>
       )}
     </div>
