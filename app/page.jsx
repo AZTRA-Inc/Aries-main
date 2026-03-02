@@ -57,6 +57,86 @@ function HealthStrip({ suites, tests }) {
 }
 
 // ═══════════════════════════════════════
+// Test Cases View — Generated test code for probes
+// ═══════════════════════════════════════
+function TestCasesView({ probes, endpoint }) {
+  if (!probes.length) {
+    return <div className="py-8 px-5 text-center text-[13px]" style={{ color: colors.t5 }}>No probes for this endpoint</div>;
+  }
+
+  return (
+    <div className="px-5 py-3.5">
+      {probes.map((t) => {
+        const statusMap = { approved: "200 OK", pending: "200 OK", rejected: "400 Bad Request" };
+        const method = endpoint.method;
+        const path = endpoint.path;
+        const hasId = path.includes("{id}");
+        const resource = path.split("/").pop().replace("{id}", "").replace(/-/g, "_") || "resource";
+
+        const posAssertions = [];
+        posAssertions.push(`expect(response.status).toBe(${t.review === "rejected" ? 400 : 200});`);
+        posAssertions.push(`expect(response.body).toHaveProperty("${hasId ? "id" : "data"}");`);
+        if (t.pos > 1) posAssertions.push(`expect(response.headers["content-type"]).toContain("application/json");`);
+        if (t.pos > 2) posAssertions.push(`expect(response.body.${hasId ? "id" : "data"}).toBeDefined();`);
+        if (t.pos > 3) posAssertions.push(`expect(response.latency).toBeLessThan(${endpoint.time.replace("ms", "").replace("s", "000")});`);
+
+        const negAssertions = [];
+        if (t.neg > 0) negAssertions.push(`expect(errorResponse.status).toBe(${method === "GET" ? 404 : 422});`);
+        if (t.neg > 1) negAssertions.push(`expect(errorResponse.body).toHaveProperty("error");`);
+        if (t.neg > 2) negAssertions.push(`expect(unauthorizedResponse.status).toBe(401);`);
+
+        const code = `describe("${t.name}", () => {
+  it("should handle valid ${method} ${path}", async () => {
+    const response = await request.${method.toLowerCase()}("${path}"${hasId ? ".replace(\"{id}\", testId)" : ""})
+      .set("Authorization", "Bearer \${token}");
+
+    ${posAssertions.join("\n    ")}
+  });${negAssertions.length > 0 ? `
+
+  it("should reject invalid input", async () => {
+    const errorResponse = await request.${method.toLowerCase()}("${path}"${hasId ? ".replace(\"{id}\", \"invalid\")" : ""})
+      .send({ invalid: true });
+
+    ${negAssertions.join("\n    ")}
+  });` : ""}
+});`;
+
+        return (
+          <div key={t.id} className="mb-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ background: t.review === "approved" ? colors.green : t.review === "pending" ? "#D97706" : colors.t5 }}
+              />
+              <span className="text-[12px] font-semibold truncate" style={{ color: colors.t1 }}>{t.name}</span>
+              {t.aiGenerated && <AiBadge />}
+              <div className="flex-1" />
+              <span className="font-mono text-[10px] font-medium" style={{ color: colors.t4 }}>
+                {t.pos} pos · {t.neg} neg
+              </span>
+            </div>
+            <pre
+              className="font-mono text-[11px] leading-relaxed p-3 rounded-lg overflow-auto"
+              style={{
+                background: colors.canvas,
+                border: `1px solid ${colors.border}`,
+                color: colors.t2,
+                maxHeight: 220,
+                margin: 0,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+              }}
+            >
+              {code}
+            </pre>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
 // Main App
 // ═══════════════════════════════════════
 export default function Aries() {
@@ -304,11 +384,10 @@ export default function Aries() {
                       )}
                     </div>
 
-                    {/* Schema section */}
+                    {/* Schema + Test Cases section */}
                     <div style={{ borderTop: `1px solid ${colors.border}` }}>
                       <div className="flex items-center gap-0 px-5" style={{ borderBottom: `1px solid ${colors.border}` }}>
-                        <span className="text-[11px] font-semibold uppercase mr-3.5 py-2.5" style={{ color: colors.t4, letterSpacing: 0.5 }}>Schema</span>
-                        {["tree", "raw"].map((v) => {
+                        {["test cases", "tree", "raw"].map((v) => {
                           const active = schemaView === v;
                           return (
                             <button
@@ -322,13 +401,14 @@ export default function Aries() {
                                 marginBottom: -1,
                               }}
                             >
-                              {v}
+                              {v === "test cases" ? "Test Cases" : v.charAt(0).toUpperCase() + v.slice(1)}
                             </button>
                           );
                         })}
                         <div className="flex-1" />
                         <Pill text={`${selEp.schema.length} fields`} />
                       </div>
+                      {schemaView === "test cases" && <TestCasesView probes={linked} endpoint={selEp} />}
                       {schemaView === "tree" && <TreeView schema={selEp.schema} method={selEp.method} path={selEp.path} />}
                       {schemaView === "raw" && <RawView schema={selEp.schema} method={selEp.method} path={selEp.path} time={selEp.time} fieldCount={selEp.fieldCount} />}
                     </div>
