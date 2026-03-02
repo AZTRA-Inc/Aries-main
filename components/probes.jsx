@@ -6,7 +6,7 @@ import { StatusDot, AiBadge, ConfBadge, Checkbox, Stepper, Button, ApproveReject
 // ═══════════════════════════════════════
 // Probe Row — Approved / Pending / Rejected states
 // ═══════════════════════════════════════
-export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle, selected, onSelect }) {
+export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle, selected, onSelect, showCheckbox }) {
   const isPend = t.review === "pending";
   const isApp = t.review === "approved";
   const isRej = t.review === "rejected";
@@ -28,9 +28,11 @@ export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdat
         onClick={onToggle}
         className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer rounded-md transition-colors hover:bg-slate-50"
       >
-        <div onClick={(e) => e.stopPropagation()}>
-          <Checkbox checked={!!selected} onToggle={onSelect} />
-        </div>
+        {showCheckbox && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox checked={!!selected} onToggle={onSelect} />
+          </div>
+        )}
         <StatusDot color={dotColor} hollow={isRej} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
@@ -49,9 +51,16 @@ export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdat
         <ConfBadge value={t.aiConf} />
 
         {isPend && <ApproveRejectBtns onApprove={onApprove} onReject={onReject} />}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.purple} strokeWidth="2.5" className="shrink-0">
-          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
-        </svg>
+        <button
+          onClick={(e) => { e.stopPropagation(); if (onSelect) onSelect(); }}
+          title="Generate description"
+          className="shrink-0 flex items-center justify-center transition-all hover:opacity-60"
+          style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.purple} strokeWidth="2.5">
+            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+          </svg>
+        </button>
         {!isPend && (
           <button
             onClick={(e) => { e.stopPropagation(); onReset(); }}
@@ -140,11 +149,6 @@ export function ReviewStrip({ tests, onApproveAll }) {
           </span>
         )}
         <div className="flex-1" />
-        {pe > 0 && (
-          <Button onClick={onApproveAll} size="sm">
-            Approve All {pe}
-          </Button>
-        )}
       </div>
       <div className="flex gap-px h-[3px] rounded-full overflow-hidden mb-2" style={{ background: colors.surface }}>
         {ap > 0 && <div style={{ flex: ap, background: colors.green }} />}

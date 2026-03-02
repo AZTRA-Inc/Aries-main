@@ -263,19 +263,23 @@ export default function Aries() {
                 {rightTab === "probes" && (
                   <div>
                     <div className="flex items-center gap-2.5 px-5 pt-3.5">
-                      <Checkbox
-                        checked={linked.length > 0 && selectedProbes.length === linked.length}
-                        onToggle={() => {
-                          if (selectedProbes.length === linked.length) {
-                            setSelectedProbes([]);
-                          } else {
-                            setSelectedProbes(linked.map((t) => t.id));
-                          }
-                        }}
-                      />
+                      {selectedProbes.length > 0 && (
+                        <Checkbox
+                          checked={linked.length > 0 && selectedProbes.length === linked.length}
+                          onToggle={() => {
+                            if (selectedProbes.length === linked.length) {
+                              setSelectedProbes([]);
+                            } else {
+                              setSelectedProbes(linked.map((t) => t.id));
+                            }
+                          }}
+                        />
+                      )}
                       <AiBadge />
                       <div className="flex-1" />
-                      <Button variant="secondary" onClick={() => setSelectedProbes([])}>Cancel</Button>
+                      {selectedProbes.length > 0 && (
+                        <Button variant="secondary" onClick={() => setSelectedProbes([])}>Cancel</Button>
+                      )}
                       <Button>Generate</Button>
                     </div>
                     <ReviewStrip tests={linked} onApproveAll={() => aaEp(selEp.id)} />
@@ -291,6 +295,7 @@ export default function Aries() {
                           onUpdatePos={(v) => updPos(t.id, v)}
                           onUpdateNeg={(v) => updNeg(t.id, v)}
                           selected={selectedProbes.includes(t.id)}
+                          showCheckbox={selectedProbes.length > 0}
                           onSelect={() => setSelectedProbes((p) => p.includes(t.id) ? p.filter((x) => x !== t.id) : [...p, t.id])}
                         />
                       ))}
