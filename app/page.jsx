@@ -393,6 +393,8 @@ export default function Aries() {
                           key={t.id} t={t}
                           expanded={expT === t.id}
                           onToggle={() => setExpT(expT === t.id ? null : t.id)}
+                          onApprove={() => rv(t.id, "approved")}
+                          onReject={() => rv(t.id, "rejected")}
                           onReset={() => rv(t.id, "pending")}
                           onUpdatePos={(v) => updPos(t.id, v)}
                           onUpdateNeg={(v) => updNeg(t.id, v)}

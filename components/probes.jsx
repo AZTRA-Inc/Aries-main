@@ -6,7 +6,7 @@ import { StatusDot, AiBadge, ConfBadge, Checkbox, Stepper, Button } from "./ui";
 // ═══════════════════════════════════════
 // Probe Row — Approved / Pending / Rejected states
 // ═══════════════════════════════════════
-export function ProbeRow({ t, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle, selected, onSelect, showCheckbox }) {
+export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdateNeg, expanded, onToggle, selected, onSelect, showCheckbox }) {
   const isPend = t.review === "pending";
   const isApp = t.review === "approved";
   const isRej = t.review === "rejected";
@@ -50,6 +50,31 @@ export function ProbeRow({ t, onReset, onUpdatePos, onUpdateNeg, expanded, onTog
         </div>
         <ConfBadge value={t.aiConf} />
 
+        {/* Approve (check) icon */}
+        <button
+          onClick={(e) => { e.stopPropagation(); if (onApprove) onApprove(); }}
+          title="Approve"
+          className="shrink-0 flex items-center justify-center transition-all hover:opacity-60"
+          style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={colors.green} strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Reject (X) icon */}
+        <button
+          onClick={(e) => { e.stopPropagation(); if (onReject) onReject(); }}
+          title="Reject"
+          className="shrink-0 flex items-center justify-center transition-all hover:opacity-60"
+          style={{ border: "none", background: "transparent", cursor: "pointer", padding: 2 }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={colors.red} strokeWidth="2.5">
+            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Sparkle (generate) icon */}
         <button
           onClick={(e) => { e.stopPropagation(); if (onSelect) onSelect(); }}
           title="Generate description"
