@@ -3,3 +3,10 @@ node_modules/
 out/
 .DS_Store
 *.tsbuildinfo
+
+# Terraform artifacts
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
