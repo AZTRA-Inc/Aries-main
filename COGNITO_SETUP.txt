@@ -1,0 +1,203 @@
+================================================================================
+  ARIES — AWS Cognito SSO Setup Instructions
+  Enterprise Auth with PenTest-Grade Guardrails
+================================================================================
+
+PREREQUISITES
+  - AWS CLI configured with admin credentials
+  - Google Cloud Console access (for Google SSO)
+  - Azure AD / Entra ID access (for Microsoft SSO)
+  - Cloudflare Dashboard access (for security headers)
+
+================================================================================
+STEP 1: CREATE AWS COGNITO USER POOL
+================================================================================
+
+1a. Create the User Pool:
+
+  aws cognito-idp create-user-pool \
+    --pool-name "aries-prod" \
+    --policies '{"PasswordPolicy":{"MinimumLength":12,"RequireUppercase":true,"RequireLowercase":true,"RequireNumbers":true,"RequireSymbols":true,"TemporaryPasswordValidityDays":1}}' \
+    --mfa-configuration ON \
+    --auto-verified-attributes email \
+    --username-attributes email \
+    --account-recovery-setting '{"RecoveryMechanisms":[{"Priority":1,"Name":"verified_email"}]}' \
+    --user-pool-add-ons '{"AdvancedSecurityMode":"ENFORCED"}' \
+    --schema '[{"Name":"email","Required":true,"Mutable":true}]'
+
+  >>> Save the "Id" from the response (e.g. us-east-1_AbCdEfGhI)
+
+1b. Create App Client (PKCE, no client secret):
+
+  aws cognito-idp create-user-pool-client \
+    --user-pool-id <POOL_ID> \
+    --client-name "aries-web" \
+    --no-generate-secret \
+    --explicit-auth-flows ALLOW_USER_SRP_AUTH ALLOW_REFRESH_TOKEN_AUTH \
+    --supported-identity-providers Google Microsoft COGNITO \
+    --callback-urls '["https://aries.aztra.ai/","https://aries.aztra.ai/login/"]' \
+    --logout-urls '["https://aries.aztra.ai/login/"]' \
+    --allowed-o-auth-flows code \
+    --allowed-o-auth-scopes openid email profile \
+    --allowed-o-auth-flows-user-pool-client \
+    --access-token-validity 15 \
+    --id-token-validity 15 \
+    --refresh-token-validity 1440 \
+    --token-validity-units '{"AccessToken":"minutes","IdToken":"minutes","RefreshToken":"minutes"}'
+
+  >>> Save the "ClientId" from the response
+
+1c. Configure Hosted UI Domain:
+
+  aws cognito-idp create-user-pool-domain \
+    --user-pool-id <POOL_ID> \
+    --domain "aries-aztra"
+
+  >>> Your domain will be: aries-aztra.auth.<region>.amazoncognito.com
+
+================================================================================
+STEP 2: REGISTER GOOGLE IDENTITY PROVIDER
+================================================================================
+
+2a. Go to Google Cloud Console:
+    https://console.cloud.google.com/apis/credentials
+
+2b. Create OAuth 2.0 Client ID:
+    - Application type: Web application
+    - Name: Aries SSO
+    - Authorized redirect URIs:
+      https://aries-aztra.auth.<region>.amazoncognito.com/oauth2/idpresponse
+
+2c. Save the Client ID and Client Secret
+
+2d. Register Google IdP in Cognito:
+
+  aws cognito-idp create-identity-provider \
+    --user-pool-id <POOL_ID> \
+    --provider-name Google \
+    --provider-type Google \
+    --provider-details '{"client_id":"<GOOGLE_CLIENT_ID>","client_secret":"<GOOGLE_CLIENT_SECRET>","authorize_scopes":"openid email profile"}' \
+    --attribute-mapping '{"email":"email","name":"name","username":"sub"}'
+
+================================================================================
+STEP 3: REGISTER MICROSOFT IDENTITY PROVIDER
+================================================================================
+
+3a. Go to Azure AD Portal:
+    https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps
+
+3b. Register a new application:
+    - Name: Aries SSO
+    - Supported account types: Accounts in any organizational directory
+    - Redirect URI (Web):
+      https://aries-aztra.auth.<region>.amazoncognito.com/oauth2/idpresponse
+
+3c. Under Certificates & Secrets, create a new client secret
+    Save the Client ID (from Overview) and Client Secret value
+
+3d. Register Microsoft IdP in Cognito:
+
+  aws cognito-idp create-identity-provider \
+    --user-pool-id <POOL_ID> \
+    --provider-name Microsoft \
+    --provider-type OIDC \
+    --provider-details '{"client_id":"<AZURE_CLIENT_ID>","client_secret":"<AZURE_CLIENT_SECRET>","authorize_scopes":"openid email profile","oidc_issuer":"https://login.microsoftonline.com/<TENANT_ID>/v2.0","attributes_request_method":"GET"}' \
+    --attribute-mapping '{"email":"email","name":"name","username":"sub"}'
+
+================================================================================
+STEP 4: ENABLE CLOUDWATCH AUDIT LOGGING
+================================================================================
+
+4a. Create CloudWatch log group:
+
+  aws logs create-log-group \
+    --log-group-name /aws/cognito/aries-prod
+
+4b. Enable log delivery:
+
+  aws cognito-idp set-log-delivery-configuration \
+    --user-pool-id <POOL_ID> \
+    --log-configurations '[{"EventSource":"userNotification","LogLevel":"INFO","CloudWatchLogsConfiguration":{"LogGroupArn":"arn:aws:logs:<region>:<account>:log-group:/aws/cognito/aries-prod"}}]'
+
+================================================================================
+STEP 5: UPDATE ENVIRONMENT VARIABLES
+================================================================================
+
+Edit the file: .env.local (in the project root)
+
+  NEXT_PUBLIC_COGNITO_POOL_ID=<your-pool-id>
+  NEXT_PUBLIC_COGNITO_CLIENT_ID=<your-client-id>
+  NEXT_PUBLIC_COGNITO_DOMAIN=aries-aztra.auth.<region>.amazoncognito.com
+
+>>> IMPORTANT: .env.local is gitignored and should NEVER be committed.
+    For production deployment, set these as build-time env vars in your
+    CI/CD pipeline or inject them during the S3 upload process.
+
+================================================================================
+STEP 6: CONFIGURE CLOUDFLARE SECURITY HEADERS
+================================================================================
+
+Go to: Cloudflare Dashboard > aries.aztra.ai > Rules > Transform Rules
+Create a "Modify Response Header" rule for all requests:
+
+  Header                      Value
+  -------------------------   ----------------------------------------
+  Content-Security-Policy     default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.amazoncognito.com https://*.auth.*.amazoncognito.com; frame-src 'none'; object-src 'none'; base-uri 'self'
+  Strict-Transport-Security   max-age=31536000; includeSubDomains
+  X-Content-Type-Options      nosniff
+  X-Frame-Options             DENY
+  Referrer-Policy             strict-origin-when-cross-origin
+  Permissions-Policy          camera=(), microphone=(), geolocation=()
+  X-XSS-Protection            1; mode=block
+
+Create a second rule for the login page only (URI path contains /login):
+  Cache-Control               no-store
+
+================================================================================
+STEP 7: BUILD AND DEPLOY
+================================================================================
+
+  npm run build
+  aws s3 sync out/ s3://aries.aztra.ai --delete
+
+================================================================================
+STEP 8: VERIFICATION CHECKLIST
+================================================================================
+
+  [ ] Login page loads at /login
+  [ ] Email/password sign-up works (sends verification email)
+  [ ] Email confirmation code validates
+  [ ] MFA enrollment shows QR code on first sign-in
+  [ ] TOTP code from authenticator app verifies
+  [ ] Subsequent sign-ins prompt for MFA code
+  [ ] Google SSO redirects to Google and back
+  [ ] Microsoft SSO redirects to Azure AD and back
+  [ ] Sign-out clears sessionStorage and redirects to /login
+  [ ] Idle timeout (30 min) auto-signs out
+  [ ] 5 failed login attempts triggers 30s lockout
+  [ ] Tokens are stored in sessionStorage (NOT localStorage)
+  [ ] Security headers visible in DevTools (Network > Response Headers)
+  [ ] OWASP ZAP scan passes with no critical/high findings
+
+================================================================================
+ENTERPRISE PENTEST GUARDRAILS SUMMARY
+================================================================================
+
+  Control                   Implementation
+  ------------------------  ------------------------------------------------
+  PKCE OAuth 2.0            Authorization Code + PKCE (no client secret)
+  MFA Enforcement           TOTP required for all users
+  Secure Token Storage      sessionStorage (clears on tab close)
+  Password Policy           12+ chars, upper/lower/number/symbol
+  Brute-Force Protection    Cognito Advanced Security + client rate limiting
+  Session Timeout           15 min token expiry, 30 min idle auto sign-out
+  CSRF Protection           PKCE code_verifier + state parameter
+  CSP Headers               Restrictive policy via Cloudflare
+  HSTS                      1-year max-age with includeSubDomains
+  Clickjacking              X-Frame-Options: DENY
+  Audit Logging             CloudWatch logs for all auth events
+  SRP Auth                  Passwords never sent in plaintext
+  Token Refresh             Auto-refresh every 10 min, 24h max
+  Account Lockout           Cognito Advanced Security auto-blocks
+
+================================================================================
