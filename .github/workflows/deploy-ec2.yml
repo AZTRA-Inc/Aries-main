@@ -3,7 +3,7 @@ name: Deploy Static Site to EC2
 on:
   push:
     branches:
-      - feature/ec2-alb-github-actions
+      - main
   workflow_dispatch:
 
 jobs:
