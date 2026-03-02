@@ -14,7 +14,7 @@ import { PipelinesView } from "@/components/pipelines";
 // ═══════════════════════════════════════
 // KPI Health Strip
 // ═══════════════════════════════════════
-function HealthStrip({ suites, tests }) {
+function HealthStrip({ suites, tests, open, onToggle }) {
   const allRuns = suites.flatMap((s) => s.runs || []);
   const totalRuns = allRuns.length;
   const passed = allRuns.filter((r) => r.s === "pass").length;
@@ -37,27 +37,37 @@ function HealthStrip({ suites, tests }) {
   ];
 
   return (
-    <div className="flex items-stretch shrink-0" style={{ background: colors.canvas, borderBottom: `1px solid ${colors.border}` }}>
-      {items.map((m, i) => (
-        <div
-          key={i}
-          className="flex-1 flex flex-col items-center justify-center py-2.5"
-          style={{ borderRight: i < items.length - 1 ? `1px solid ${colors.border}` : "none" }}
-        >
-          <span className="font-mono text-base font-bold leading-none" style={{ color: m.c, letterSpacing: -0.3 }}>
-            {m.v}
-          </span>
-          <span className="text-[9px] font-semibold mt-1 uppercase" style={{ color: colors.t4, letterSpacing: 0.5 }}>
-            {m.l}
-          </span>
-        </div>
-      ))}
+    <div
+      className="shrink-0 overflow-hidden transition-all duration-200"
+      style={{
+        maxHeight: open ? 60 : 0,
+        opacity: open ? 1 : 0,
+        borderBottom: open ? `1px solid ${colors.border}` : "none",
+        background: colors.canvas,
+      }}
+    >
+      <div className="flex items-stretch" style={{ cursor: "pointer" }} onClick={onToggle}>
+        {items.map((m, i) => (
+          <div
+            key={i}
+            className="flex-1 flex flex-col items-center justify-center py-2.5"
+            style={{ borderRight: i < items.length - 1 ? `1px solid ${colors.border}` : "none" }}
+          >
+            <span className="font-mono text-base font-bold leading-none" style={{ color: m.c, letterSpacing: -0.3 }}>
+              {m.v}
+            </span>
+            <span className="text-[9px] font-semibold mt-1 uppercase" style={{ color: colors.t4, letterSpacing: 0.5 }}>
+              {m.l}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════
-// Test Cases View — Generated test code for probes
+// Specs View — Generated test code for probes
 // ═══════════════════════════════════════
 function TestCasesView({ probes, endpoint }) {
   if (!probes.length) {
@@ -154,6 +164,7 @@ export default function Aries() {
   const [showImport, setShowImport] = useState(false);
   const [schemaView, setSchemaView] = useState(null);
   const [selectedProbes, setSelectedProbes] = useState([]);
+  const [kpiOpen, setKpiOpen] = useState(true);
 
   useEffect(function () {
     if (typeof window !== "undefined") {
@@ -223,7 +234,7 @@ export default function Aries() {
             return (
               <button
                 key={t.k}
-                onClick={() => setTopTab(t.k)}
+                onClick={() => { setTopTab(t.k); setKpiOpen(false); }}
                 className="px-5 text-[13px] font-semibold bg-transparent transition-all"
                 style={{
                   border: "none",
@@ -242,7 +253,20 @@ export default function Aries() {
           <Pill text={`${suites.length} suites`} color={colors.t3} />
           <Pill text={`${ENDPOINTS.length} endpoints`} color={colors.t4} />
         </div>
-        <div className="flex items-center pr-4">
+        <div className="flex items-center gap-2 pr-4">
+          <button
+            onClick={() => setKpiOpen((o) => !o)}
+            title={kpiOpen ? "Hide KPIs" : "Show KPIs"}
+            className="flex items-center justify-center w-7 h-7 rounded-md transition-all cursor-pointer"
+            style={{ background: "transparent", border: `1px solid ${colors.border}`, color: colors.t4 }}
+            onMouseEnter={function (e) { e.currentTarget.style.background = colors.canvas; e.currentTarget.style.color = colors.t1; }}
+            onMouseLeave={function (e) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = colors.t4; }}
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+              style={{ transform: kpiOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+              <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
           <button
             onClick={handleSignOut}
             className="px-3 py-1.5 text-[11px] font-medium rounded-md transition-all cursor-pointer"
@@ -255,7 +279,7 @@ export default function Aries() {
         </div>
       </div>
 
-      <HealthStrip suites={suites} tests={tests} />
+      <HealthStrip suites={suites} tests={tests} open={kpiOpen} onToggle={() => setKpiOpen((o) => !o)} />
 
       {/* ═══ EXPLORER ═══ */}
       {topTab === "explorer" && (
@@ -284,7 +308,7 @@ export default function Aries() {
                 return (
                   <div
                     key={e.id}
-                    onClick={() => { setSelEpId(e.id); setExpT(null); setExpSuite(null); }}
+                    onClick={() => { setSelEpId(e.id); setExpT(null); setExpSuite(null); setKpiOpen(false); }}
                     className="flex items-center gap-2 px-3 py-[7px] cursor-pointer transition-all hover:bg-slate-50"
                     style={{
                       background: active ? colors.canvas : "transparent",
@@ -382,10 +406,10 @@ export default function Aries() {
                       )}
                     </div>
 
-                    {/* Schema + Test Cases section */}
+                    {/* Schema + Specs section */}
                     <div style={{ borderTop: `1px solid ${colors.border}` }}>
                       <div className="flex items-center gap-0 px-5" style={{ borderBottom: `1px solid ${colors.border}` }}>
-                        {["test cases", "tree", "raw"].map((v) => {
+                        {["tree", "raw", "specs"].map((v) => {
                           const active = schemaView === v;
                           return (
                             <button
@@ -399,16 +423,16 @@ export default function Aries() {
                                 marginBottom: -1,
                               }}
                             >
-                              {v === "test cases" ? "Test Cases" : v.charAt(0).toUpperCase() + v.slice(1)}
+                              {v.charAt(0).toUpperCase() + v.slice(1)}
                             </button>
                           );
                         })}
                         <div className="flex-1" />
                         <Pill text={`${selEp.schema.length} fields`} />
                       </div>
-                      {schemaView === "test cases" && <TestCasesView probes={linked} endpoint={selEp} />}
                       {schemaView === "tree" && <TreeView schema={selEp.schema} method={selEp.method} path={selEp.path} />}
                       {schemaView === "raw" && <RawView schema={selEp.schema} method={selEp.method} path={selEp.path} time={selEp.time} fieldCount={selEp.fieldCount} />}
+                      {schemaView === "specs" && <TestCasesView probes={linked} endpoint={selEp} />}
                     </div>
                   </div>
                 )}
