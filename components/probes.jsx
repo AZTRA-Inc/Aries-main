@@ -88,7 +88,7 @@ export function ProbeRow({ t, onApprove, onReject, onReset, onUpdatePos, onUpdat
             <Stepper value={t.neg} onChange={onUpdateNeg} min={0} label="Neg" />
             <div className="w-px h-5" style={{ background: colors.border }} />
             <span className="text-[10px] font-semibold uppercase" style={{ color: colors.t4, letterSpacing: 0.4 }}>
-              Conf
+              Confidence
             </span>
             <ConfBadge value={t.aiConf} />
           </div>

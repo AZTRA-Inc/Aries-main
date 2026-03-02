@@ -133,33 +133,6 @@ export function SuiteCard({ suite, allTests, expanded, onToggle, onEdit }) {
             </div>
           </div>
 
-          {/* Run history */}
-          <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${colors.border}` }}>
-            <div className="flex justify-between mb-1.5">
-              <span className="text-[11px] font-semibold uppercase" style={{ color: colors.t4, letterSpacing: 0.5 }}>
-                Runs · {runs.length}
-              </span>
-              <span className="text-[11px]" style={{ color: colors.t5 }}>Schedule: {suite.schedule}</span>
-            </div>
-            <div className="flex gap-0.5 items-end h-7">
-              {runs.map((r, i) => {
-                const h = Math.max(4, Math.round((parseDur(r.d) / (12 * 60)) * 24));
-                return (
-                  <div
-                    key={i}
-                    title={r.d}
-                    className="flex-1 max-w-[10px] rounded-sm"
-                    style={{
-                      height: h,
-                      background: r.s === "pass" ? colors.green : colors.red,
-                      opacity: 0.25 + ((runs.length - i) / runs.length) * 0.75,
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
           {/* Action buttons */}
           {!editing && (
             <div className="flex gap-1.5 px-3.5 py-2.5 pb-3">

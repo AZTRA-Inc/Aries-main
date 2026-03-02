@@ -8,7 +8,6 @@ import { MethodBadge, Pill, AiBadge, ConfBadge, IconBtn, Button, suiteMetrics } 
 import { ProbeRow, ReviewStrip } from "@/components/probes";
 import { SuiteCard, InlineSuiteBuilder } from "@/components/suites";
 import { TreeView, RawView } from "@/components/schema";
-import { ImportModal } from "@/components/import-modal";
 import { PipelinesView } from "@/components/pipelines";
 
 // ═══════════════════════════════════════
@@ -71,7 +70,6 @@ export default function Aries() {
   const [epFilter, setEpFilter] = useState("");
   const [topTab, setTopTab] = useState("explorer");
   const [rightTab, setRightTab] = useState("probes");
-  const [showImport, setShowImport] = useState(false);
   const [schemaView, setSchemaView] = useState(null);
 
   useEffect(function () {
@@ -112,8 +110,6 @@ export default function Aries() {
 
   return (
     <div className="w-full h-screen flex flex-col font-sans text-sm antialiased relative" style={{ color: colors.t1, background: colors.canvas }}>
-      {showImport && <ImportModal onClose={() => setShowImport(false)} />}
-
       {/* ═══ Header ═══ */}
       <div className="flex items-center h-[52px] shrink-0 bg-white" style={{ borderBottom: `1px solid ${colors.border}` }}>
         <div className="flex items-center gap-2.5 px-5 h-full" style={{ borderRight: `1px solid ${colors.border}` }}>
@@ -189,11 +185,6 @@ export default function Aries() {
                 className="flex-1 px-2.5 py-[7px] font-mono text-xs outline-none rounded-lg transition-all focus:ring-2"
                 style={{ border: `1px solid ${colors.border}`, background: colors.canvas, color: colors.t1 }}
               />
-              <IconBtn onClick={() => setShowImport(true)} title="Import Requirements">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </IconBtn>
             </div>
             <div className="flex-1 overflow-auto">
               {filteredEps.map((e) => {
@@ -233,8 +224,6 @@ export default function Aries() {
                   <Pill text={selEp.time} />
                   <Pill text={`${selEp.fieldCount} fields`} />
                   <div className="flex-1" />
-                  <Pill text={`${linked.length} probes`} color={colors.t4} />
-                  <Pill text={`${relatedSuites.length} suites`} color={colors.t3} />
                 </div>
 
                 {/* Sub-tabs */}
@@ -252,7 +241,7 @@ export default function Aries() {
                           borderBottom: active ? `2px solid ${colors.t1}` : "2px solid transparent",
                         }}
                       >
-                        {tab.l} · {tab.c}
+                        {tab.l}
                       </button>
                     );
                   })}
@@ -262,10 +251,17 @@ export default function Aries() {
                 {rightTab === "probes" && (
                   <div>
                     <div className="flex items-center gap-2.5 px-5 pt-3.5">
-                      <span className="text-[11px] font-semibold uppercase" style={{ color: colors.t4, letterSpacing: 0.5 }}>Probes · {linked.length}</span>
+                      <span className="text-[11px] font-semibold uppercase" style={{ color: colors.t4, letterSpacing: 0.5 }}>Probes</span>
                       <AiBadge />
                       <div className="flex-1" />
-                      <Button variant="secondary">Regenerate</Button>
+                      <Button variant="secondary">
+                        <span className="inline-flex items-center gap-1.5">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={colors.purple} strokeWidth="2.5">
+                            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+                          </svg>
+                          Generate
+                        </span>
+                      </Button>
                     </div>
                     <ReviewStrip tests={linked} onApproveAll={() => aaEp(selEp.id)} />
                     <div className="pb-3">
@@ -322,7 +318,7 @@ export default function Aries() {
                   <div className="p-5">
                     <div className="flex items-center gap-2.5 mb-3">
                       <span className="text-[11px] font-semibold uppercase" style={{ color: colors.t4, letterSpacing: 0.5 }}>
-                        Related Suites · {relatedSuites.length}
+                        Related Suites
                       </span>
                       <div className="flex-1" />
                       <IconBtn onClick={() => setShowBuilder(!showBuilder)} title="Create Suite">
@@ -334,6 +330,7 @@ export default function Aries() {
                     {showBuilder && (
                       <InlineSuiteBuilder
                         allTests={tests}
+                        defaultName="AI Generated"
                         onClose={() => setShowBuilder(false)}
                         onCreate={(data) => {
                           setSuites((p) => [...p, { id: "s" + p.length, name: data.name, tests: data.tests, runs: [], freq: data.freq, schedule: "00:00 UTC", lastRun: "Never", nextRun: "Scheduled", enabled: true, incident: null }]);
