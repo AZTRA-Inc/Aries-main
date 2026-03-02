@@ -2,5 +2,5 @@ aws_region            = "us-east-1"
 project_name          = "aries-frontend"
 environment           = "prod"
 bucket_name           = "aries-frontend-prod-unique-bucket-name"
-domain_names          = ["aries.frontend.aztra.ai"]
+domain_names          = ["aries.aztra.ai"]
 acm_certificate_arn   = "arn:aws:acm:us-east-1:014498649984:certificate/a5aa5c46-b0c9-444b-bc28-4ddc60bd12a2"

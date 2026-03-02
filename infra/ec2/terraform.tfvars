@@ -5,5 +5,5 @@ instance_type = "t3.micro"
 key_name      = "new_aztra_key"
 existing_alb_name      = "aries-service"
 listener_port          = 443
-host_header            = "aries-frontend.aztra.ai"
+host_header            = "aries.aztra.ai"
 listener_rule_priority = 2

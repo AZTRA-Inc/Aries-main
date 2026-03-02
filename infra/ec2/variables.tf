@@ -43,7 +43,7 @@ variable "listener_port" {
 variable "host_header" {
   description = "Host header for ALB listener rule."
   type        = string
-  default     = "aries-frontend.aztra.ai"
+  default     = "aries.aztra.ai"
 }
 
 variable "listener_rule_priority" {

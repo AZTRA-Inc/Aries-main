@@ -5,7 +5,7 @@ It also integrates with existing ALB `aries-service` by creating:
 
 - a dedicated target group,
 - target attachment for this EC2 instance,
-- HTTPS listener (443) host-header rule for `aries-frontend.aztra.ai`.
+- HTTPS listener (443) host-header rule for `aries.aztra.ai`.
 
 Application setup and deployment are handled by GitHub Actions (not `user_data`), and no Nginx is used.
 EC2 serves static files directly with `serve` on port `3000`, while ALB terminates HTTPS on `443`.
@@ -32,7 +32,7 @@ In your repository settings, add:
 
 ## Cloudflare
 
-- Create DNS record: `aries-frontend` -> CNAME to your ALB DNS output
+- Create DNS record: `aries` -> CNAME to your ALB DNS output
 - Keep Cloudflare proxy ON (orange cloud)
 - Use SSL mode `Full (strict)` if Cloudflare proxies to ALB HTTPS
 

@@ -49,6 +49,6 @@ This script builds your app, uploads `out/` to S3, and invalidates CloudFront ca
 
 Manually create this DNS record in Cloudflare:
 
-- `aries.frontend` -> CNAME -> `<cloudfront_distribution_domain_name>` (proxied ON)
+- `aries` -> CNAME -> `<cloudfront_distribution_domain_name>` (proxied ON)
 
-Then browse `https://aries.frontend.aztra.ai`.
+Then browse `https://aries.aztra.ai`.
