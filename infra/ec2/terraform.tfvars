@@ -1,0 +1,9 @@
+aws_region    = "us-east-1"
+project_name  = "aries-frontend"
+environment   = "prod"
+instance_type = "t3.micro"
+key_name      = "new_aztra_key"
+existing_alb_name      = "aries-service"
+listener_port          = 443
+host_header            = "aries-frontend.aztra.ai"
+listener_rule_priority = 2

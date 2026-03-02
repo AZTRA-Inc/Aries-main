@@ -1,0 +1,88 @@
+name: Deploy Static Site to EC2
+
+on:
+  push:
+    branches:
+      - feature/ec2-alb-github-actions
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static output
+        run: npm run build
+
+      - name: Prepare EC2 static app runtime
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            sudo apt-get update
+            sudo apt-get install -y curl rsync ca-certificates gnupg
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            sudo npm install -g serve
+            sudo mkdir -p /var/www/aries-frontend /home/${{ secrets.EC2_USER }}/aries-deploy
+
+            cat <<'EOF' | sudo tee /etc/systemd/system/aries-frontend.service > /dev/null
+            [Unit]
+            Description=Aries Frontend Static Server
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=${{ secrets.EC2_USER }}
+            WorkingDirectory=/var/www/aries-frontend
+            ExecStart=/usr/bin/serve -s /var/www/aries-frontend -l 3000
+            Restart=always
+            RestartSec=5
+            Environment=NODE_ENV=production
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            sudo systemctl daemon-reload
+            sudo systemctl enable aries-frontend.service
+
+      - name: Upload static files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "out/*"
+          target: "/home/${{ secrets.EC2_USER }}/aries-deploy"
+          strip_components: 1
+          overwrite: true
+
+      - name: Publish files and restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            sudo mkdir -p /var/www/aries-frontend
+            sudo rm -rf /var/www/aries-frontend/*
+            sudo cp -r /home/${{ secrets.EC2_USER }}/aries-deploy/* /var/www/aries-frontend/
+            sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} /var/www/aries-frontend
+            sudo systemctl restart aries-frontend.service
