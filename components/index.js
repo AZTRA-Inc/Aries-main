@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════
-// Aries V10 — Component Exports
+// Aries — Component Exports
 // ═══════════════════════════════════════
 // Usage: import { MethodBadge, ProbeRow, SuiteCard } from "@/components"
 

@@ -113,9 +113,9 @@ export function PipelinesView({ suites, setSuites, tests }) {
       {/* Table header */}
       <div
         className="grid items-center px-5 py-2"
-        style={{ gridTemplateColumns: "40px 1fr 90px 90px 60px 70px 100px 60px", background: colors.canvas, borderBottom: `1px solid ${colors.border}` }}
+        style={{ gridTemplateColumns: "40px 1fr 90px 90px 60px 70px 100px 80px 60px", background: colors.canvas, borderBottom: `1px solid ${colors.border}` }}
       >
-        {["", "SUITE", "FREQ", "SCHEDULE", "PROBES", "CONF", "PASS RATE", ""].map((h, i) => (
+        {["", "SUITE", "FREQ", "SCHEDULE", "PROBES", "CONF", "PASS RATE", "INCIDENT", ""].map((h, i) => (
           <span key={i} className="text-[9px] font-semibold" style={{ color: colors.t5, letterSpacing: 0.6 }}>{h}</span>
         ))}
       </div>
@@ -129,7 +129,7 @@ export function PipelinesView({ suites, setSuites, tests }) {
             key={s.id}
             className="grid items-center px-5 py-2.5 transition-all hover:bg-slate-50"
             style={{
-              gridTemplateColumns: "40px 1fr 90px 90px 60px 70px 100px 60px",
+              gridTemplateColumns: "40px 1fr 90px 90px 60px 70px 100px 80px 60px",
               borderBottom: `1px solid ${colors.border}`,
               opacity: s.enabled ? 1 : 0.45,
             }}
@@ -139,11 +139,6 @@ export function PipelinesView({ suites, setSuites, tests }) {
               <div className="flex items-center gap-1.5">
                 <StatusDot color={m.failStreak > 0 ? colors.red : s.enabled ? colors.green : colors.t5} size={6} />
                 <span className="text-[13px] font-semibold truncate" style={{ color: colors.t1 }}>{s.name}</span>
-                {s.incident && (
-                  <span className="font-mono text-[9px] font-bold px-1.5 rounded-full" style={{ color: colors.red, background: colors.red + "10", border: `1px solid ${colors.red}20` }}>
-                    {s.incident.status}
-                  </span>
-                )}
               </div>
               <div className="text-[11px] ml-3 mt-px" style={{ color: colors.t5 }}>{s.lastRun}</div>
             </div>
@@ -157,6 +152,27 @@ export function PipelinesView({ suites, setSuites, tests }) {
               </div>
               <span className="font-mono text-[11px] font-bold" style={{ color: colors.green }}>{m.passRate}%</span>
             </div>
+            {s.incident ? (
+              <a
+                href={"https://aztra.service-now.com/nav_to.do?uri=incident.do?sysparm_query=number=" + s.incident.key}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 no-underline transition-all hover:opacity-70"
+                title={"Open " + s.incident.key + " in ServiceNow"}
+              >
+                <img src="/servicenow-icon.png" alt="ServiceNow" width="13" height="13" style={{ borderRadius: 3 }} />
+                <span className="font-mono text-[9px] font-bold" style={{ color: colors.red }}>{s.incident.key}</span>
+              </a>
+            ) : (
+              <button
+                onClick={() => window.open("https://aztra.service-now.com/nav_to.do?uri=incident.do?sys_id=-1&sysparm_query=short_description=" + encodeURIComponent(s.name), "_blank")}
+                title="Open Incident in ServiceNow"
+                className="inline-flex items-center justify-center transition-all hover:opacity-70"
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 2 }}
+              >
+                <img src="/servicenow-icon.png" alt="ServiceNow" width="13" height="13" style={{ borderRadius: 3 }} />
+              </button>
+            )}
             <Button variant="run">Run</Button>
           </div>
         );

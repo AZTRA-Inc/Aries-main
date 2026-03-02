@@ -46,14 +46,12 @@ export function SuiteCard({ suite, allTests, expanded, onToggle, onEdit }) {
       <div
         onClick={onToggle}
         className="grid items-center gap-3.5 px-3.5 py-2.5 cursor-pointer rounded-xl transition-colors hover:bg-slate-50"
-        style={{ gridTemplateColumns: "8px 1fr repeat(4,auto) 56px 18px" }}
+        style={{ gridTemplateColumns: "8px 1fr repeat(4,auto) auto 18px" }}
       >
         <StatusDot color={m.failStreak > 0 ? colors.red : !suite.enabled ? colors.t5 : colors.green} size={7} />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-[13px] font-semibold truncate" style={{ color: colors.t1 }}>{suite.name}</span>
-            {!suite.enabled && <Pill text="OFF" />}
-            {suite.incident && <Pill text={suite.incident.key} />}
           </div>
           <div className="text-[11px] mt-0.5" style={{ color: colors.t4 }}>
             {m.testCount} probes · {suite.freq} · {suite.lastRun}
@@ -69,20 +67,43 @@ export function SuiteCard({ suite, allTests, expanded, onToggle, onEdit }) {
         </div>
         <div className="text-right">
           <div className="font-mono text-sm font-bold" style={{ color: colors.purple }}>{m.avgConf}%</div>
-          <div className="text-[9px] font-semibold" style={{ color: colors.t5 }}>CONF</div>
+          <div className="text-[9px] font-semibold" style={{ color: colors.t5 }}>CONFIDENCE</div>
         </div>
         <div className="text-right">
           <div className="font-mono text-sm font-semibold" style={{ color: colors.red }}>{m.testCount}</div>
           <div className="text-[9px] font-semibold" style={{ color: colors.t5 }}>PROBES</div>
         </div>
-        <Sparkline runs={runs.slice(0, 10)} height={18} />
-        <svg
-          width="12" height="12" fill="none" stroke={colors.t5} strokeWidth="2" viewBox="0 0 24 24"
-          className="transition-transform duration-150"
-          style={{ transform: expanded ? "rotate(90deg)" : "rotate(0)" }}
-        >
-          <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <div className="flex items-center gap-2">
+          {suite.incident ? (
+            <a
+              href={"https://aztra.service-now.com/nav_to.do?uri=incident.do?sysparm_query=number=" + suite.incident.key}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              title={"Open " + suite.incident.key + " in ServiceNow"}
+              className="inline-flex items-center gap-1.5 no-underline transition-all hover:opacity-70"
+            >
+              <img src="/servicenow-icon.png" alt="ServiceNow" width="14" height="14" style={{ borderRadius: 3 }} />
+              <span className="font-mono text-[10px] font-bold" style={{ color: colors.red }}>{suite.incident.key}</span>
+            </a>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); window.open("https://aztra.service-now.com/nav_to.do?uri=incident.do?sys_id=-1&sysparm_query=short_description=" + encodeURIComponent(suite.name), "_blank"); }}
+              title="Open Incident in ServiceNow"
+              className="inline-flex items-center justify-center transition-all hover:opacity-70"
+              style={{ background: "transparent", border: "none", cursor: "pointer", padding: 2 }}
+            >
+              <img src="/servicenow-icon.png" alt="ServiceNow" width="14" height="14" style={{ borderRadius: 3 }} />
+            </button>
+          )}
+          <svg
+            width="12" height="12" fill="none" stroke={colors.t5} strokeWidth="2" viewBox="0 0 24 24"
+            className="transition-transform duration-150"
+            style={{ transform: expanded ? "rotate(90deg)" : "rotate(0)" }}
+          >
+            <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
       </div>
 
       {/* Expanded content */}
@@ -213,9 +234,9 @@ export function SuiteCard({ suite, allTests, expanded, onToggle, onEdit }) {
 // ═══════════════════════════════════════
 // Inline Suite Builder
 // ═══════════════════════════════════════
-export function InlineSuiteBuilder({ allTests, onClose, onCreate }) {
-  const [name, setName] = useState("");
-  const [sel, setSel] = useState([]);
+export function InlineSuiteBuilder({ allTests, onClose, onCreate, defaultName = "", defaultTests = [] }) {
+  const [name, setName] = useState(defaultName);
+  const [sel, setSel] = useState(defaultTests);
   const [freq, setFreq] = useState("Daily");
 
   const toggle = (id) => setSel((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
@@ -231,10 +252,10 @@ export function InlineSuiteBuilder({ allTests, onClose, onCreate }) {
       }}
     >
       <div className="flex items-center gap-2 px-3 py-2" style={{ background: colors.canvas, borderBottom: `1px solid ${colors.border}` }}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.t3} strokeWidth="2.5">
-          <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={colors.purple} strokeWidth="2.5">
+          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
         </svg>
-        <span className="text-xs font-bold" style={{ color: colors.t1 }}>New Suite</span>
+        <span className="text-xs font-bold" style={{ color: colors.t1 }}>AI Generated Suite</span>
         <div className="flex-1" />
         <button onClick={onClose} className="text-base font-medium leading-none" style={{ border: "none", background: "transparent", color: colors.t4 }}>
           ×

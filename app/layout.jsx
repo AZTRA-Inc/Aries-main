@@ -1,8 +1,9 @@
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata = {
-  title: "Aries V10",
-  description: "API Testing Platform",
+  title: "Aries",
+  description: "Intelligent API Automation",
 };
 
 export default function RootLayout({ children }) {
@@ -14,7 +15,9 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
